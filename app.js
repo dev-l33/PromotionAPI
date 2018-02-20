@@ -7,6 +7,7 @@ require('dotenv').config();
 
 var index = require('./routes/index');
 
+// connect mogno db
 var app = express();
 var db = require('./models');
 db.connect();
