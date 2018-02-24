@@ -52,7 +52,7 @@ exports.createICO = (req, res) => {
             }); // If there's an out of gas error the second parameter is the receipt.
 
         managerContract.once('TokenIssue',
-            function(error, event) {
+            function (error, event) {
                 console.log(error);
                 console.log(event);
                 // res.json(event);
@@ -80,60 +80,32 @@ exports.createICO = (req, res) => {
     }
 }
 
-exports.getTokenByArtist = (req, res) => {
+exports.getContractByArtist = (req, res) => {
     if (!Web3.utils.isAddress(req.params.artist_address)) {
         return res.status(400).json({
             message: "invalid artist_address"
         });
     }
     try {
-        managerContract.methods.getToken(req.params.artist_address).call()
-            .then(result => {
-                if (result != '0x0000000000000000000000000000000000000000' && Web3.utils.isAddress(result)) {
+        Promise.all([
+                managerContract.methods.getToken(req.params.artist_address).call(),
+                managerContract.methods.getCrowdsale(req.params.artist_address).call()
+            ])
+            .then(([tokenAddress, crowdsaleAddress]) => {
+                if (tokenAddress != '0x0000000000000000000000000000000000000000' &&
+                    crowdsaleAddress != '0x0000000000000000000000000000000000000000' &&
+                    Web3.utils.isAddress(tokenAddress) &&
+                    Web3.utils.isAddress(crowdsaleAddress)) {
                     res.json({
                         success: true,
-                        artist_address: req.params.artist_address,
-                        contract_address: result
+                        artist: req.params.artist_address,
+                        token: tokenAddress,
+                        crowdsale: crowdsaleAddress
                     });
                 } else {
                     res.status(404).json({
-                        message : `The artist ${req.params.artist_address} doesn't have token`,
-                        artist_address: req.params.artist_address
-                    });
-                }
-            })
-            .catch(error => {
-                res.status(500).json({
-                    message: ex.error
-                });
-            });
-    } catch (ex) {
-        console.log(ex);
-        res.status(500).json({
-            message: ex.message
-        });
-    }
-}
-
-exports.getCrowdsaleByArtist = (req, res) => {
-    if (!Web3.utils.isAddress(req.params.artist_address)) {
-        return res.status(400).json({
-            message: "invalid artist_address"
-        });
-    }
-    try {
-        managerContract.methods.getCrowdsale(req.params.artist_address).call()
-            .then(result => {
-                if (result != '0x0000000000000000000000000000000000000000' && Web3.utils.isAddress(result)) {
-                    res.json({
-                        success: true,
-                        artist_address: req.params.artist_address,
-                        contract_address: result
-                    });
-                } else {
-                    res.status(404).json({
-                        message : `The artist ${req.params.artist_address} doesn't have crowdsale`,
-                        artist_address: req.params.artist_address
+                        message: `The artist ${req.params.artist_address} doesn't have token`,
+                        artist: req.params.artist_address
                     });
                 }
             })
