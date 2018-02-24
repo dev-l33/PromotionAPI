@@ -4,6 +4,6 @@ var promo = require('./promo');
 var token = require('./token');
 
 router.use('/promotion', promo);
-router.use('/token', token);
+router.use('/ico', token);
 
 module.exports = router;

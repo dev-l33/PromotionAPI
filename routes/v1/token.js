@@ -5,7 +5,8 @@ var tokenController = require('../../controllers/tokenController');
 
 router.use('/', promoController.checkAuth);
 
-router.post('/createToken', tokenController.createToken);
-router.get('/get/:artist_address', tokenController.getTokenByArtist);
+router.post('/create', tokenController.createICO);
+router.get('/token/:artist_address', tokenController.getTokenByArtist);
+router.get('/crowdsale/:artist_address', tokenController.getCrowdsaleByArtist);
 
 module.exports = router;
