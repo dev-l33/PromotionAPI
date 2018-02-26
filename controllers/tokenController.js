@@ -7,22 +7,19 @@ var managerContract = Contracts.managerContract;
 exports.createICO = (req, res) => {
     if (!Web3.utils.isAddress(req.body.artist_address)) {
         return res.status(400).json({
-            message: "invalid artist_address",
-            code: 100
+            message: "invalid artist_address"
         });
     }
 
     if (!req.body.token_name) {
         return res.status(400).json({
-            message: "invalid token_name",
-            code: 100
+            message: "invalid token_name"
         });
     }
 
     if (!req.body.token_symbol) {
         return res.status(400).json({
-            message: "invalid token_symbol",
-            code: 100
+            message: "invalid token_symbol"
         });
     }
 
@@ -136,4 +133,75 @@ exports.getContractByArtist = (req, res) => {
             //     message: ex.message
             // });
         });
+}
+
+exports.createStage = (req, res) => {
+    if (!Web3.utils.isAddress(req.body.artist_address)) {
+        return res.status(400).json({
+            message: "invalid artist_address"
+        });
+    }
+
+    if (!req.body.start_date) {
+        return res.status(400).json({
+            message: "invalid start date"
+        });
+    }
+
+    if (!req.body.end_date) {
+        return res.status(400).json({
+            message: "invalid end date"
+        });
+    }
+
+    if (!req.body.price) {
+        return res.status(400).json({
+            message: "invalid price"
+        });
+    }
+
+    if (!req.body.supply) {
+        return res.status(400).json({
+            message: "invalid supply"
+        });
+    }
+
+    try {
+        managerContract.methods.setStage(
+                req.body.artist_address,
+                req.body.start_date,
+                req.body.end_date,
+                req.body.supply,
+                req.body.price)
+            .send()
+            .on('transactionHash', hash => {
+                console.log('Transaction Hash: ', hash);
+                res.json({
+                    success: true,
+                    status: 'pending',
+                    tx_hash: hash,
+                    artist_address: req.body.artist_address,
+                    start_date: req.body.start_date,
+                    end_date: req.body.end_date,
+                    supply: req.body.supply,
+                    price: req.body.price
+                });
+            })
+            .on('confirmation', function (confirmationNumber, receipt) {
+                console.log("confirmation: ", confirmationNumber, receipt);
+            })
+            .on('receipt', function (receipt) {
+                console.log("receipt: ", receipt);
+            })
+            .on('error', function (error) {
+                console.log("error: ", error);
+            }); // If there's an out of gas error the second parameter is the receipt.
+
+        console.log("Transaction was sent");
+    } catch (ex) {
+        console.log(ex);
+        res.status(500).json({
+            message: ex.message
+        });
+    }
 }
