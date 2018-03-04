@@ -205,3 +205,40 @@ exports.createStage = (req, res) => {
         });
     }
 }
+
+exports.tokenBalance = (req, res) => {
+    if (!Web3.utils.isAddress(req.params.contract)) {
+        return res.status(400).json({
+            message: "invalid artist_address"
+        });
+    }
+
+    if (!Web3.utils.isAddress(req.params.account)) {
+        return res.status(400).json({
+            message: "invalid artist_address"
+        });
+    }
+    try {
+        let tokenContract = Contracts.tokenContract(req.params.contract);
+        tokenContract.methods.balanceOf(req.params.account).call()
+            .then(result => {
+                console.log(`Check balance for ${req.params.account} at ${req.params.contract} : ${result}`)
+                res.json({
+                    success: true,
+                    accont: req.params.account,
+                    token: req.params.contract,
+                    balance: result
+                });
+            })
+            .error(error => {
+                res.status(500).json({
+                    message: error
+                });
+            });
+    } catch (ex) {
+        console.log(ex);
+        res.status(500).json({
+            message: "Internal Error"
+        });
+    }
+}
