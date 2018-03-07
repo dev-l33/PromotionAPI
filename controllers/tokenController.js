@@ -242,3 +242,18 @@ exports.tokenBalance = (req, res) => {
         });
     }
 }
+
+exports.getEthUsdPrice = (req, res) => {
+    managerContract.methods.ethusd().call()
+    .then(result => {
+        res.json({
+            success: true,
+            ethusd: result / 100
+        });
+    })
+    .catch(ex => {
+        res.status(500).json({
+            message: ex
+        });
+    });
+}

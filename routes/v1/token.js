@@ -6,5 +6,6 @@ router.post('/create', tokenController.createICO);
 router.post('/stage/create', tokenController.createStage);
 router.get('/contract/:artist_address', tokenController.getContractByArtist);
 router.get('/balance/:contract/:account', tokenController.tokenBalance);
+router.get('/ethusd', tokenController.getEthUsdPrice);
 
 module.exports = router;
