@@ -206,6 +206,61 @@ exports.createStage = (req, res) => {
     }
 }
 
+exports.allocateTokens = (req, res) => {
+    if (!Web3.utils.isAddress(req.body.artist_address)) {
+        return res.status(422).json({
+            message: "invalid artist_address"
+        });
+    }
+
+    if (!Web3.utils.isAddress(req.body.beneficiary_address)) {
+        return res.status(422).json({
+            message: "invalid beneficiary_address"
+        });
+    }
+
+    if (!req.body.amount) {
+        return res.status(422).json({
+            message: "invalid amount"
+        });
+    }
+
+    try {
+        managerContract.methods.allocate(
+                req.body.artist_address,
+                req.body.beneficiary_address,
+                parseInt(req.body.amount))
+            .send()
+            .on('transactionHash', hash => {
+                console.log('Transaction Hash: ', hash);
+                res.json({
+                    success: true,
+                    status: 'pending',
+                    tx_hash: hash,
+                    artist_address: req.body.artist_address,
+                    beneficiary_address: req.body.beneficiary_address,
+                    amount: req.body.amount
+                });
+            })
+            .on('confirmation', function (confirmationNumber, receipt) {
+                console.log("confirmation: ", confirmationNumber, receipt);
+            })
+            .on('receipt', function (receipt) {
+                console.log("receipt: ", receipt);
+            })
+            .on('error', function (error) {
+                console.log("error: ", error);
+            }); // If there's an out of gas error the second parameter is the receipt.
+
+        console.log("Transaction was sent");
+    } catch (ex) {
+        console.log(ex);
+        res.status(500).json({
+            message: ex.message
+        });
+    }
+}
+
 exports.tokenBalance = (req, res) => {
     if (!Web3.utils.isAddress(req.params.contract)) {
         return res.status(400).json({
