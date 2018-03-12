@@ -1,3 +1,4 @@
+.env
 # OS X
 .DS_Store*
 Icon?
@@ -25,5 +26,3 @@ coverage
 
 # Benchmarking
 benchmarks/graphs
-
-.env
