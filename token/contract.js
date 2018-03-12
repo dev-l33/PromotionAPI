@@ -7,11 +7,12 @@ var crowdsaleABI = require("./crowdsaleABI.json");
 const {
     MANAGER_CONTRACT_ADDRESS: managerAddress,
     GAS,
-    GAS_PRICE
+    GAS_PRICE,
+    DEFAULT_ACCOUNT
 } = process.env;
 
 const options = {
-    from: '0xbd900d44661e554a05415a43fd79025521a973a3', // default from address
+    from: DEFAULT_ACCOUNT, // default from address
     gasPrice: GAS_PRICE,
     gas: GAS
 }
