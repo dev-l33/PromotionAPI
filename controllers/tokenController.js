@@ -103,15 +103,17 @@ exports.getContractByArtist = (req, res) => {
                 let crowdsaleContract = Contracts.crowdsaleContract(crowdsaleAddress);
                 let tokenContract = Contracts.tokenContract(tokenAddress);
                 return Promise.all([
+                    tokenContract.methods.totalSupply().call(),
                     crowdsaleContract.methods.weiRaised().call(),
                     crowdsaleContract.methods.tokenSold().call(),
-                    tokenContract.methods.totalSupply().call()
+                    crowdsaleContract.methods.weiRaisedInCurrentStage().call(),
+                    crowdsaleContract.methods.tokenSoldInCurrentStage().call(),
                 ]);
             } else {
                 reject(new Error('Not found'));
             }
         })
-        .then(([weiRaised, tokenSold, totalSupply]) => {
+        .then(([totalSupply, weiRaised, tokenSold, weiRaisedInCurrentStage, tokenSoldInCurrentStage]) => {
             console.log('token address, crontract address', contracts.token, contracts.crowdsale);
             res.json({
                 success: true,
@@ -120,6 +122,8 @@ exports.getContractByArtist = (req, res) => {
                 crowdsale: contracts.crowdsale,
                 eth_raised: Web3.utils.fromWei(weiRaised, 'ether'),
                 token_sold: Web3.utils.fromWei(tokenSold, 'ether'),
+                eth_raised_current_stage: Web3.utils.fromWei(weiRaisedInCurrentStage, 'ether'),
+                token_sold_current_stage: Web3.utils.fromWei(tokenSoldInCurrentStage, 'ether'),
                 total_supply: Web3.utils.fromWei(totalSupply, 'ether')
             });
         })
