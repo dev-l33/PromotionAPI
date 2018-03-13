@@ -24,10 +24,14 @@ exports.createICO = (req, res) => {
     }
 
     try {
+        const HCR_ALLOCATION = 50000000;
+        const ARTIST_ALLOCATION = 50000000;
         managerContract.methods.createToken(
                 req.body.artist_address,
                 req.body.token_name,
-                req.body.token_symbol)
+                req.body.token_symbol,
+                Web3.utils.toWei(HCR_ALLOCATION, "ether"),
+                Web3.utils.toWei(ARTIST_ALLOCATION, "ether"))
             .send()
             .on('transactionHash', hash => {
                 console.log('Transaction Hash: ', hash);
