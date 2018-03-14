@@ -24,8 +24,8 @@ exports.createICO = (req, res) => {
     }
 
     try {
-        const HCR_ALLOCATION = 50000000;
-        const ARTIST_ALLOCATION = 50000000;
+        const HCR_ALLOCATION = '50000000';
+        const ARTIST_ALLOCATION = '50000000';
         managerContract.methods.createToken(
                 req.body.artist_address,
                 req.body.token_name,
