@@ -66,7 +66,7 @@ exports.sendTransaction = (req, res) => {
                 replied = true;
             })
             .on('receipt', function (receipt) {
-                console.log("receipt: ", receipt);
+                // console.log("receipt: ", receipt);
             })
             .on('confirmation', function (confirmationNumber, receipt) {
                 console.log("confirmation", receipt);

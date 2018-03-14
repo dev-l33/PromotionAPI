@@ -6,26 +6,26 @@ var managerContract = Contracts.managerContract;
 
 exports.createICO = (req, res) => {
     if (!Web3.utils.isAddress(req.body.artist_address)) {
-        return res.status(400).json({
+        return res.status(422).json({
             message: "invalid artist_address"
         });
     }
 
     if (!req.body.token_name) {
-        return res.status(400).json({
+        return res.status(422).json({
             message: "invalid token_name"
         });
     }
 
     if (!req.body.token_symbol) {
-        return res.status(400).json({
+        return res.status(422).json({
             message: "invalid token_symbol"
         });
     }
 
     try {
-        const HCR_ALLOCATION = 50000000;
-        const ARTIST_ALLOCATION = 50000000;
+        const HCR_ALLOCATION = '50000000';
+        const ARTIST_ALLOCATION = '50000000';
         managerContract.methods.createToken(
                 req.body.artist_address,
                 req.body.token_name,
@@ -48,19 +48,19 @@ exports.createICO = (req, res) => {
                 console.log("confirmation: ", confirmationNumber, receipt);
             })
             .on('receipt', function (receipt) {
-                console.log("receipt: ", receipt);
+                // console.log("receipt: ", receipt);
             })
             .on('error', function (error) {
                 console.log("error: ", error);
             }); // If there's an out of gas error the second parameter is the receipt.
 
-        managerContract.once('TokenIssue',
-            function (error, event) {
-                console.log(error);
-                console.log(event);
-                // res.json(event);
-            }
-        );
+        // managerContract.once('TokenIssue',
+        //     function (error, event) {
+        //         console.log(error);
+        //         console.log(event);
+        //         // res.json(event);
+        //     }
+        // );
 
         // managerContract.events.TokenIssue({
         //     filter: { artist: req.body.artist_address },
@@ -85,7 +85,7 @@ exports.createICO = (req, res) => {
 
 exports.getContractByArtist = (req, res) => {
     if (!Web3.utils.isAddress(req.params.artist_address)) {
-        return res.status(400).json({
+        return res.status(422).json({
             message: "invalid artist_address"
         });
     }
@@ -137,39 +137,36 @@ exports.getContractByArtist = (req, res) => {
                 message: `The artist ${req.params.artist_address} doesn't have token`,
                 artist: req.params.artist_address
             });
-            // res.status(500).json({
-            //     message: ex.message
-            // });
         });
 }
 
 exports.createStage = (req, res) => {
     if (!Web3.utils.isAddress(req.body.artist_address)) {
-        return res.status(400).json({
+        return res.status(422).json({
             message: "invalid artist_address"
         });
     }
 
     if (!req.body.start_date) {
-        return res.status(400).json({
+        return res.status(422).json({
             message: "invalid start date"
         });
     }
 
     if (!req.body.end_date) {
-        return res.status(400).json({
+        return res.status(422).json({
             message: "invalid end date"
         });
     }
 
     if (!req.body.price) {
-        return res.status(400).json({
+        return res.status(422).json({
             message: "invalid price"
         });
     }
 
     if (!req.body.supply) {
-        return res.status(400).json({
+        return res.status(422).json({
             message: "invalid supply"
         });
     }
@@ -199,7 +196,7 @@ exports.createStage = (req, res) => {
                 console.log("confirmation: ", confirmationNumber, receipt);
             })
             .on('receipt', function (receipt) {
-                console.log("receipt: ", receipt);
+                // console.log("receipt: ", receipt);
             })
             .on('error', function (error) {
                 console.log("error: ", error);
@@ -254,7 +251,7 @@ exports.allocateTokens = (req, res) => {
                 console.log("confirmation: ", confirmationNumber, receipt);
             })
             .on('receipt', function (receipt) {
-                console.log("receipt: ", receipt);
+                // console.log("receipt: ", receipt);
             })
             .on('error', function (error) {
                 console.log("error: ", error);
@@ -271,13 +268,13 @@ exports.allocateTokens = (req, res) => {
 
 exports.tokenBalance = (req, res) => {
     if (!Web3.utils.isAddress(req.params.contract)) {
-        return res.status(400).json({
+        return res.status(422).json({
             message: "invalid artist_address"
         });
     }
 
     if (!Web3.utils.isAddress(req.params.account)) {
-        return res.status(400).json({
+        return res.status(422).json({
             message: "invalid artist_address"
         });
     }
