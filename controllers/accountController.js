@@ -38,7 +38,7 @@ exports.sendTransaction = (req, res) => {
     }
 
     const {
-        GAS,
+        GAS_LOW,
         GAS_PRICE
     } = process.env;
 
@@ -50,7 +50,7 @@ exports.sendTransaction = (req, res) => {
                 from: account.address,
                 to: req.body.address,
                 value: web3.utils.toWei(value, "ether"),
-                gas: GAS,
+                gas: GAS_LOW,
                 gasPrice: GAS_PRICE
             })
             .on('transactionHash', function (hash) {
@@ -73,10 +73,10 @@ exports.sendTransaction = (req, res) => {
                 console.log("confirmation", receipt);
             })
             .on('error', error => {
-                console.log("error: ", error);
+                console.log(error);
                 if (!replied) {
                     res.status(400).json({
-                        message: error.Error
+                        message: String(error)
                     });
                 }
             }); // If a out of gas error, the second parameter is the receipt.
