@@ -43,12 +43,13 @@ exports.sendTransaction = (req, res) => {
     } = process.env;
 
     try {
+        let value = parseFloat(req.body.value).toFixed(18);
         let account = web3.eth.accounts.wallet.add(req.body.private_key);
         // using the event emitter
         web3.eth.sendTransaction({
                 from: account.address,
                 to: req.body.address,
-                value: web3.utils.toWei(req.body.value, "ether"),
+                value: web3.utils.toWei(value, "ether"),
                 gas: GAS,
                 gasPrice: GAS_PRICE
             })
@@ -61,7 +62,7 @@ exports.sendTransaction = (req, res) => {
                     tx_hash: hash,
                     from: account.address,
                     to: req.body.address,
-                    value: req.body.value
+                    value: value
                 });
                 replied = true;
             })
