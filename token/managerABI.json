@@ -1,428 +1,414 @@
 [
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "icoCount",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "artistIndex",
-      "outputs": [
-        {
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "updatePriceFreq",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "icos",
-      "outputs": [
-        {
-          "name": "crowdsale",
-          "type": "address"
-        },
-        {
-          "name": "token",
-          "type": "address"
-        },
-        {
-          "name": "price",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "ethusd",
-      "outputs": [
-        {
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [],
-      "name": "owner",
-      "outputs": [
-        {
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "newOwner",
-          "type": "address"
-        }
-      ],
-      "name": "transferOwnership",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "name": "_wallet",
-          "type": "address"
-        },
-        {
-          "name": "_hcrAddress",
-          "type": "address"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "constructor"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "name": "artist",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "name": "crowdsale",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "name": "token",
-          "type": "address"
-        }
-      ],
-      "name": "TokenIssue",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "name": "previousOwner",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "name": "newOwner",
-          "type": "address"
-        }
-      ],
-      "name": "OwnershipTransferred",
-      "type": "event"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_artistAddress",
-          "type": "address"
-        },
-        {
-          "name": "_name",
-          "type": "string"
-        },
-        {
-          "name": "_symbol",
-          "type": "string"
-        },
-        {
-          "name": "_hcrAllocation",
-          "type": "uint256"
-        },
-        {
-          "name": "_artistAllocation",
-          "type": "uint256"
-        }
-      ],
-      "name": "createToken",
-      "outputs": [
-        {
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_artist",
-          "type": "address"
-        },
-        {
-          "name": "_start",
-          "type": "uint256"
-        },
-        {
-          "name": "_end",
-          "type": "uint256"
-        },
-        {
-          "name": "_amount",
-          "type": "uint256"
-        },
-        {
-          "name": "_usdPrice",
-          "type": "uint256"
-        }
-      ],
-      "name": "setStage",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_artist",
-          "type": "address"
-        },
-        {
-          "name": "_to",
-          "type": "address"
-        },
-        {
-          "name": "_amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "allocate",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_artist",
-          "type": "address"
-        },
-        {
-          "name": "_usdPrice",
-          "type": "uint256"
-        }
-      ],
-      "name": "setPrice",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_freq",
-          "type": "uint256"
-        }
-      ],
-      "name": "setPriceUpdateFreq",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_updateEnabled",
-          "type": "bool"
-        }
-      ],
-      "name": "enablePriceUpdate",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_artist",
-          "type": "address"
-        },
-        {
-          "name": "_user",
-          "type": "address"
-        }
-      ],
-      "name": "addAffiliate",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "_artist",
-          "type": "address"
-        },
-        {
-          "name": "_user",
-          "type": "address"
-        }
-      ],
-      "name": "addReviewer",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "name": "_artist",
-          "type": "address"
-        }
-      ],
-      "name": "getCrowdsale",
-      "outputs": [
-        {
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "name": "_artist",
-          "type": "address"
-        }
-      ],
-      "name": "getToken",
-      "outputs": [
-        {
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "myid",
-          "type": "bytes32"
-        },
-        {
-          "name": "result",
-          "type": "string"
-        }
-      ],
-      "name": "__callback",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [
-        {
-          "name": "myid",
-          "type": "bytes32"
-        },
-        {
-          "name": "result",
-          "type": "string"
-        },
-        {
-          "name": "proof",
-          "type": "bytes"
-        }
-      ],
-      "name": "__callback",
-      "outputs": [],
-      "payable": false,
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "constant": false,
-      "inputs": [],
-      "name": "updatePrice",
-      "outputs": [],
-      "payable": true,
-      "stateMutability": "payable",
-      "type": "function"
-    }
-  ]
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_artist",
+				"type": "address"
+			},
+			{
+				"name": "_usdPrice",
+				"type": "uint256"
+			}
+		],
+		"name": "setPrice",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "icoCount",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "artistIndex",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_artist",
+				"type": "address"
+			}
+		],
+		"name": "getCrowdsale",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_artist",
+				"type": "address"
+			},
+			{
+				"name": "_openingTime",
+				"type": "uint256"
+			},
+			{
+				"name": "_closingTime",
+				"type": "uint256"
+			},
+			{
+				"name": "_amount",
+				"type": "uint256"
+			},
+			{
+				"name": "_usdPrice",
+				"type": "uint256"
+			}
+		],
+		"name": "setStage",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "myid",
+				"type": "bytes32"
+			},
+			{
+				"name": "result",
+				"type": "string"
+			}
+		],
+		"name": "__callback",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_artist",
+				"type": "address"
+			},
+			{
+				"name": "_to",
+				"type": "address"
+			},
+			{
+				"name": "_amount",
+				"type": "uint256"
+			}
+		],
+		"name": "allocate",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "myid",
+				"type": "bytes32"
+			},
+			{
+				"name": "result",
+				"type": "string"
+			},
+			{
+				"name": "proof",
+				"type": "bytes"
+			}
+		],
+		"name": "__callback",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "updatePriceFreq",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "icos",
+		"outputs": [
+			{
+				"name": "crowdsale",
+				"type": "address"
+			},
+			{
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"name": "price",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_artist",
+				"type": "address"
+			},
+			{
+				"name": "_openingTime",
+				"type": "uint256"
+			},
+			{
+				"name": "_closingTime",
+				"type": "uint256"
+			}
+		],
+		"name": "updateCrowdsaleTime",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_artistAddress",
+				"type": "address"
+			},
+			{
+				"name": "_name",
+				"type": "string"
+			},
+			{
+				"name": "_symbol",
+				"type": "string"
+			},
+			{
+				"name": "_hcrAllocation",
+				"type": "uint256"
+			},
+			{
+				"name": "_artistAllocation",
+				"type": "uint256"
+			}
+		],
+		"name": "createToken",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_artist",
+				"type": "address"
+			}
+		],
+		"name": "getToken",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "ethusd",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "updatePrice",
+		"outputs": [],
+		"payable": true,
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "owner",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_freq",
+				"type": "uint256"
+			}
+		],
+		"name": "setPriceUpdateFreq",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_updatePriceEnabled",
+				"type": "bool"
+			}
+		],
+		"name": "enablePriceUpdate",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "newOwner",
+				"type": "address"
+			}
+		],
+		"name": "transferOwnership",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"name": "_wallet",
+				"type": "address"
+			},
+			{
+				"name": "_hcrAddress",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"name": "artist",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "crowdsale",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "token",
+				"type": "address"
+			}
+		],
+		"name": "TokenIssue",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"name": "previousOwner",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"name": "newOwner",
+				"type": "address"
+			}
+		],
+		"name": "OwnershipTransferred",
+		"type": "event"
+	}
+]
