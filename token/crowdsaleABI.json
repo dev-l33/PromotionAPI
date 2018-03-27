@@ -20,7 +20,7 @@
 	{
 		"constant": true,
 		"inputs": [],
-		"name": "rate",
+		"name": "weiRaised",
 		"outputs": [
 			{
 				"name": "",
@@ -32,27 +32,13 @@
 		"type": "function"
 	},
 	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_rate",
-				"type": "uint256"
-			}
-		],
-		"name": "setRate",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"constant": true,
 		"inputs": [],
-		"name": "weiRaised",
+		"name": "manager",
 		"outputs": [
 			{
 				"name": "",
-				"type": "uint256"
+				"type": "address"
 			}
 		],
 		"payable": false,
@@ -123,6 +109,34 @@
 			{
 				"name": "",
 				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_price",
+				"type": "uint256"
+			}
+		],
+		"name": "setPrice",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "price",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"payable": false,
@@ -201,7 +215,7 @@
 				"type": "uint256"
 			},
 			{
-				"name": "_rate",
+				"name": "_price",
 				"type": "uint256"
 			}
 		],
