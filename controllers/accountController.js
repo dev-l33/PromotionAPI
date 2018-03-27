@@ -1,4 +1,7 @@
 var web3 = require('../ethereum');
+var Contracts = require('../token/contract');
+
+var managerContract = Contracts.managerContract;
 
 exports.create = (req, res) => {
     try {
@@ -88,5 +91,43 @@ exports.sendTransaction = (req, res) => {
             });
         }
     }
+}
+
+exports.addToWhitelist = (req, res) => {
+    if (!web3.utils.isAddress(req.params.address)) {
+        return res.status(422).json({
+            message: "invalid address"
+        });
+    }
+
+    let replied = false;
+    managerContract.methods.addToWhitelist(req.params.address)
+        .send()
+        .on('transactionHash', hash => {
+            console.log('Transaction Hash: ', hash);
+            res.json({
+                success: true,
+                status: 'pending',
+                tx_hash: hash,
+                address: req.params.address
+            });
+            replied = true;
+        })
+        .on('confirmation', function (confirmationNumber, receipt) {
+            console.log("confirmation: ", confirmationNumber, receipt);
+        })
+        .on('receipt', function (receipt) {
+            // console.log("receipt: ", receipt);
+        })
+        .on('error', function (error) {
+            console.log("error: ", error);
+            if (!replied) {
+                res.status(500).json({
+                    message: String(error)
+                });
+            }
+        }); // If there's an out of gas error the second parameter is the receipt.
+
+    console.log("Transaction was sent");
 
 }
