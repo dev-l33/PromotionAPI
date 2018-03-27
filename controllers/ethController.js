@@ -9,17 +9,21 @@ exports.transactionReceipt = (req, res) => {
 
     web3.eth.getTransactionReceipt(req.params.tx_hash)
     .then(receipt => {
-        res.json({
+        let result = {
             success: true,
             status: web3.utils.hexToNumber(receipt.status),
             from: receipt.from,
             to: receipt.to,
-            tx_hash: receipt.transactionHash,
-            data: web3.utils.fromWei(web3.utils.hexToNumberString(receipt.logs[0].data), "ether")
-        });
+            tx_hash: receipt.transactionHash
+        };
+        if (receipt.status == 1) {
+            result.data = web3.utils.fromWei(web3.utils.hexToNumberString(receipt.logs[0].data), "ether");
+        }
+
+        res.json(result);
     })
     .catch(ex => {
-        console.log(ex);
+        // console.log(ex);
         res.status(404).json({
             message: 'Invalid Transaction Hash'
         });
