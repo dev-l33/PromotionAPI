@@ -16,7 +16,7 @@ exports.transactionReceipt = (req, res) => {
             to: receipt.to,
             tx_hash: receipt.transactionHash
         };
-        if (receipt.status == 1) {
+        if (receipt.status == 1 && receipt.logs.length > 0) {
             result.data = web3.utils.fromWei(web3.utils.hexToNumberString(receipt.logs[0].data), "ether");
         }
 
