@@ -113,8 +113,8 @@ exports.getContractByArtist = (req, res) => {
                 crowdsale: crowdsaleAddress,
                 eth_raised: Web3.utils.fromWei(weiRaised, 'ether'),
                 token_sold: Web3.utils.fromWei(tokenSold, 'ether'),
-                eth_raised_current_stage: 0,
-                token_sold_current_stage: 0,
+                eth_raised_current_stage: Web3.utils.fromWei(weiRaised, 'ether'),
+                token_sold_current_stage: Web3.utils.fromWei(tokenSold, 'ether'),
                 total_supply: Web3.utils.fromWei(totalSupply, 'ether')
             });
         })
@@ -328,7 +328,7 @@ exports.allocateTokens = (req, res) => {
         const {
             HCR_CROWDSALE_ADDRESS: crowdsaleAddress
         } = process.env;
-        
+
         let contract = Contracts.hcrCrowdsaleContract(crowdsaleAddress);
         try {
             contract.methods.allocate(req.body.beneficiary_address, Web3.utils.toWei(req.body.amount, 'ether'))
