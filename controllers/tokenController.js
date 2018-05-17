@@ -90,54 +90,93 @@ exports.getContractByArtist = (req, res) => {
         });
     }
 
-    let contracts;
-    Promise.all([
-            managerContract.methods.getToken(req.params.artist_address).call(),
-            managerContract.methods.getCrowdsale(req.params.artist_address).call()
+    // for hcr ico
+    if (req.params.artist_address == '0xe8e067Ec9D408C932524982aa78c76C2E7152D1C') {
+        const {
+            HCR_TOKEN_ADDRESS: tokenAddress,
+            HCR_CROWDSALE_ADDRESS: crowdsaleAddress
+        } = process.env;
+
+        let crowdsaleContract = Contracts.crowdsaleContract(crowdsaleAddress);
+        let tokenContract = Contracts.tokenContract(tokenAddress);
+        Promise.all([
+            tokenContract.methods.totalSupply().call(),
+            crowdsaleContract.methods.weiRaised().call(),
+            crowdsaleContract.methods.tokenSold().call()
         ])
-        .then(([tokenAddress, crowdsaleAddress]) => {
-            if (tokenAddress != '0x0000000000000000000000000000000000000000' &&
-                crowdsaleAddress != '0x0000000000000000000000000000000000000000' &&
-                Web3.utils.isAddress(tokenAddress) &&
-                Web3.utils.isAddress(crowdsaleAddress)) {
-                contracts = {
-                    token: tokenAddress,
-                    crowdsale: crowdsaleAddress
-                };
-                let crowdsaleContract = Contracts.crowdsaleContract(crowdsaleAddress);
-                let tokenContract = Contracts.tokenContract(tokenAddress);
-                return Promise.all([
-                    tokenContract.methods.totalSupply().call(),
-                    crowdsaleContract.methods.weiRaised().call(),
-                    crowdsaleContract.methods.tokenSold().call(),
-                    crowdsaleContract.methods.weiRaisedInCurrentStage().call(),
-                    crowdsaleContract.methods.tokenSoldInCurrentStage().call(),
-                ]);
-            } else {
-                reject(new Error('Not found'));
-            }
-        })
-        .then(([totalSupply, weiRaised, tokenSold, weiRaisedInCurrentStage, tokenSoldInCurrentStage]) => {
-            console.log('token address, crontract address', contracts.token, contracts.crowdsale);
-            res.json({
+        .then(([totalSupply, weiRaised, tokenSold]) => {
+            console.log('token address, crontract address', tokenAddress, crowdsaleAddress);
+            return res.json({
                 success: true,
                 artist: req.params.artist_address,
-                token: contracts.token,
-                crowdsale: contracts.crowdsale,
+                token: tokenAddress,
+                crowdsale: crowdsaleAddress,
                 eth_raised: Web3.utils.fromWei(weiRaised, 'ether'),
                 token_sold: Web3.utils.fromWei(tokenSold, 'ether'),
-                eth_raised_current_stage: Web3.utils.fromWei(weiRaisedInCurrentStage, 'ether'),
-                token_sold_current_stage: Web3.utils.fromWei(tokenSoldInCurrentStage, 'ether'),
+                eth_raised_current_stage: 0,
+                token_sold_current_stage: 0,
                 total_supply: Web3.utils.fromWei(totalSupply, 'ether')
             });
         })
         .catch(ex => {
             console.log(ex);
-            res.status(404).json({
+            return res.status(404).json({
                 message: `The artist ${req.params.artist_address} doesn't have token`,
                 artist: req.params.artist_address
             });
         });
+    } else {
+
+        // normal ICO
+        let contracts;
+        Promise.all([
+                managerContract.methods.getToken(req.params.artist_address).call(),
+                managerContract.methods.getCrowdsale(req.params.artist_address).call()
+            ])
+            .then(([tokenAddress, crowdsaleAddress]) => {
+                if (tokenAddress != '0x0000000000000000000000000000000000000000' &&
+                    crowdsaleAddress != '0x0000000000000000000000000000000000000000' &&
+                    Web3.utils.isAddress(tokenAddress) &&
+                    Web3.utils.isAddress(crowdsaleAddress)) {
+                    contracts = {
+                        token: tokenAddress,
+                        crowdsale: crowdsaleAddress
+                    };
+                    let crowdsaleContract = Contracts.crowdsaleContract(crowdsaleAddress);
+                    let tokenContract = Contracts.tokenContract(tokenAddress);
+                    return Promise.all([
+                        tokenContract.methods.totalSupply().call(),
+                        crowdsaleContract.methods.weiRaised().call(),
+                        crowdsaleContract.methods.tokenSold().call(),
+                        crowdsaleContract.methods.weiRaisedInCurrentStage().call(),
+                        crowdsaleContract.methods.tokenSoldInCurrentStage().call(),
+                    ]);
+                } else {
+                    reject(new Error('Not found'));
+                }
+            })
+            .then(([totalSupply, weiRaised, tokenSold, weiRaisedInCurrentStage, tokenSoldInCurrentStage]) => {
+                console.log('token address, crontract address', contracts.token, contracts.crowdsale);
+                return res.json({
+                    success: true,
+                    artist: req.params.artist_address,
+                    token: contracts.token,
+                    crowdsale: contracts.crowdsale,
+                    eth_raised: Web3.utils.fromWei(weiRaised, 'ether'),
+                    token_sold: Web3.utils.fromWei(tokenSold, 'ether'),
+                    eth_raised_current_stage: Web3.utils.fromWei(weiRaisedInCurrentStage, 'ether'),
+                    token_sold_current_stage: Web3.utils.fromWei(tokenSoldInCurrentStage, 'ether'),
+                    total_supply: Web3.utils.fromWei(totalSupply, 'ether')
+                });
+            })
+            .catch(ex => {
+                console.log(ex);
+                res.status(404).json({
+                    message: `The artist ${req.params.artist_address} doesn't have token`,
+                    artist: req.params.artist_address
+                });
+            });
+    }
 }
 
 exports.createStage = (req, res) => {
@@ -284,11 +323,15 @@ exports.allocateTokens = (req, res) => {
         });
     }
 
-    try {
-        managerContract.methods.allocate(
-                req.body.artist_address,
-                req.body.beneficiary_address,
-                parseInt(req.body.amount))
+    // for hcr ico
+    if (req.body.artist_address == '0xe8e067Ec9D408C932524982aa78c76C2E7152D1C') {
+        const {
+            HCR_CROWDSALE_ADDRESS: crowdsaleAddress
+        } = process.env;
+        
+        let contract = Contracts.hcrCrowdsaleContract(crowdsaleAddress);
+        try {
+            contract.methods.allocate(req.body.beneficiary_address, Web3.utils.toWei(req.body.amount, 'ether'))
             .send()
             .on('transactionHash', hash => {
                 console.log('Transaction Hash: ', hash);
@@ -310,13 +353,48 @@ exports.allocateTokens = (req, res) => {
             .on('error', function (error) {
                 console.log("error: ", error);
             }); // If there's an out of gas error the second parameter is the receipt.
+        } catch (ex) {
+            console.log(ex);
+            res.status(500).json({
+                message: ex.message
+            });
+        }
+    // normal artist ICO
+    } else {
+        try {
+            managerContract.methods.allocate(
+                    req.body.artist_address,
+                    req.body.beneficiary_address,
+                    parseInt(req.body.amount))
+                .send()
+                .on('transactionHash', hash => {
+                    console.log('Transaction Hash: ', hash);
+                    res.json({
+                        success: true,
+                        status: 'pending',
+                        tx_hash: hash,
+                        artist_address: req.body.artist_address,
+                        beneficiary_address: req.body.beneficiary_address,
+                        amount: req.body.amount
+                    });
+                })
+                .on('confirmation', function (confirmationNumber, receipt) {
+                    console.log("confirmation: ", confirmationNumber, receipt);
+                })
+                .on('receipt', function (receipt) {
+                    // console.log("receipt: ", receipt);
+                })
+                .on('error', function (error) {
+                    console.log("error: ", error);
+                }); // If there's an out of gas error the second parameter is the receipt.
 
-        console.log("Transaction was sent");
-    } catch (ex) {
-        console.log(ex);
-        res.status(500).json({
-            message: ex.message
-        });
+            console.log("Transaction was sent");
+        } catch (ex) {
+            console.log(ex);
+            res.status(500).json({
+                message: ex.message
+            });
+        }
     }
 }
 
