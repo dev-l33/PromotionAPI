@@ -131,3 +131,81 @@ exports.addToWhitelist = (req, res) => {
     console.log("Transaction was sent");
 
 }
+
+exports.transferToken = (req, res) => {
+    if (!web3.utils.isAddress(req.body.token)) {
+        return res.status(422).json({
+            message: "invalid token contract address"
+        });
+    }
+
+    if (!req.body.private_key) {
+        return res.status(422).json({
+            message: "invalid private key of from address"
+        });
+    }
+
+    if (!web3.utils.isAddress(req.body.to)) {
+        return res.status(422).json({
+            message: "invalid to address"
+        });
+    }
+
+    if (!req.body.value) {
+        return res.status(422).json({
+            message: "invalid value"
+        });
+    }
+
+    const {
+        GAS_LOW,
+        GAS_PRICE
+    } = process.env;
+
+    try {
+        let value = parseFloat(req.body.value).toFixed(18);
+        let fromAccount = web3.eth.accounts.wallet.add(req.body.private_key);
+
+        let tokenContract = Contracts.tokenContract(req.body.token);
+        tokenContract.methods.transfer(req.body.to, web3.utils.toWei(value, "ether"))
+        .send({
+            from: fromAccount.address,
+            to: req.body.to,
+            value: 0,
+            gas: GAS_LOW,
+            gasPrice: GAS_PRICE
+        })
+        .on('transactionHash', function (hash) {
+            console.log("transaction hash: ", hash);
+            web3.eth.accounts.wallet.remove(fromAccount.index);
+            res.json({
+                success: true,
+                status: 'pending',
+                tx_hash: hash,
+                from: fromAccount.address,
+                to: req.body.to,
+                value: value
+            });
+            replied = true;
+        })
+        .on('receipt', function (receipt) {
+            // console.log("receipt: ", receipt);
+        })
+        .on('confirmation', function (confirmationNumber, receipt) {
+            console.log("confirmation", receipt);
+        })
+        .on('error', error => {
+            console.log(error);
+            if (!replied) {
+                res.status(400).json({
+                    message: String(error)
+                });
+            }
+        }); // If a out of gas error, the second parameter is the receipt.
+    } catch (ex) {
+        console.log(ex);
+        res.status(500).json({
+            message: "Internal Error"
+        });
+    }
+}
