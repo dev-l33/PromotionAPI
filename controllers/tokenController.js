@@ -1,15 +1,29 @@
 var Web3 = require('web3');
+const ICOCreation = require('../models/ICOCreationModel');
+const mongoose = require('mongoose');
 
 var Contracts = require('../token/contract');
+var Bytecode = require('../token/bytecode');
 
 var managerContract = Contracts.managerContract;
 
+
+// send token from coinbase account after token deployed
+function transferToken(tokenAddress, toAddress, value) {
+    let tokenContract = Contracts.tokenContract(tokenAddress);
+    tokenContract.methods.transfer(toAddress, web3.utils.toWei(value, "ether"))
+    .send({
+        from: process.env.DEFAULT_ACCOUNT,
+        value: 0,
+        gas: process.env.GAS_LOW,
+        gasPrice: process.env.GAS_PRICE
+    })
+    .then(receipt => {
+        console.log(`Transfer ${value} from ${process.env.DEFAULT_ACCOUNT} to ${toAddress} - ${receipt.transactionHash}`);
+    });
+}
+
 exports.createICO = (req, res) => {
-    if (!Web3.utils.isAddress(req.body.artist_address)) {
-        return res.status(422).json({
-            message: "invalid artist_address"
-        });
-    }
 
     if (!req.body.token_name) {
         return res.status(422).json({
@@ -23,75 +37,157 @@ exports.createICO = (req, res) => {
         });
     }
 
-    try {
-        const HCR_ALLOCATION = '50000000';
-        const ARTIST_ALLOCATION = '50000000';
-        managerContract.methods.createToken(
-                req.body.artist_address,
-                req.body.token_name,
-                req.body.token_symbol,
-                Web3.utils.toWei(HCR_ALLOCATION, "ether"),
-                Web3.utils.toWei(ARTIST_ALLOCATION, "ether"))
-            .send()
-            .on('transactionHash', hash => {
-                console.log('Transaction Hash: ', hash);
-                res.json({
-                    success: true,
-                    status: 'pending',
-                    tx_hash: hash,
-                    artist_address: req.body.artist_address,
-                    token_name: req.body.token_name,
-                    token_symbol: req.body.token_symbol
-                });
-            })
-            .on('confirmation', function (confirmationNumber, receipt) {
-                console.log("confirmation: ", confirmationNumber, receipt);
-            })
-            .on('receipt', function (receipt) {
-                // console.log("receipt: ", receipt);
-            })
-            .on('error', function (error) {
-                console.log("error: ", error);
-            }); // If there's an out of gas error the second parameter is the receipt.
-
-        // managerContract.once('TokenIssue',
-        //     function (error, event) {
-        //         console.log(error);
-        //         console.log(event);
-        //         // res.json(event);
-        //     }
-        // );
-
-        // managerContract.events.TokenIssue({
-        //     filter: { artist: req.body.artist_address },
-        //     fromBlock: 0
-        // }, function(error, event){ console.log(event); })
-        // .on('data', function(event){
-        //     console.log(event); // same results as the optional callback above
-        // })
-        // .on('changed', function(event){
-        //     // remove event from local database
-        // })
-        // .on('error', console.error);
-
-        console.log("Transaction was sent");
-    } catch (ex) {
-        console.log(ex);
-        res.status(500).json({
-            message: ex.message
+    if (!Web3.utils.isAddress(req.body.artist_account)) {
+        return res.status(422).json({
+            message: "invalid artist trading account"
         });
     }
+
+    if (!Web3.utils.isAddress(req.body.artist_trading_account)) {
+        return res.status(422).json({
+            message: "invalid artist trading account"
+        });
+    }
+
+    if (!Web3.utils.isAddress(req.body.hcr_trading_account)) {
+        return res.status(422).json({
+            message: "invalid artist trading account"
+        });
+    }
+
+    if (!Web3.utils.isAddress(req.body.admin_account)) {
+        return res.status(422).json({
+            message: "invalid artist trading account"
+        });
+    }
+
+    let ico = new ICOCreation();
+    let tokenContract = Contracts.newTokenContract;
+    let crowdsaleContract = Contracts.newCrowdsaleContract;
+    tokenContract.deploy({
+        data: Bytecode.token,
+        arguments: [req.body.token_name, req.body.token_symbol]
+    })
+    .send(Contracts.options)
+    .on('transactionHash', hash => {
+        console.log('Token Deploy Tx Hash: ', hash);
+        ico.tokenTx = hash;
+        ico.save(err => {
+            if (err) throw err;
+        });
+        
+        res.json({
+            success: true,
+            status: 'pending',
+            tx_hash: hash,
+            token_name: req.body.token_name,
+            token_symbol: req.body.token_symbol
+        });
+    })
+    .on('receipt', function (receipt) {
+        // console.log("receipt: ", receipt);
+    })
+
+    .on('error', function (error) {
+        console.log("error: ", error);
+        return res.status(500).json({
+            message: error
+        });
+    }) // If there's an out of gas error the second parameter is the receipt.
+
+    .then(function(newContractInstance) {
+        ico.tokenAddress = newContractInstance.options.address;
+        ico.save(err => {
+            if (err) throw err;
+        });
+
+        crowdsaleContract.deploy({
+            data: Bytecode.crowdsale,
+            arguments: [process.env.WALLET_ADDRESS, newContractInstance.options.address, process.env.MANAGER_CONTRACT_ADDRESS]
+        })
+        .send(Contracts.options)
+        .on('transactionHash', hash => {
+            console.log('Crowdsale Deploy Tx Hash: ', hash);
+            ico.crowdsaleTx = hash;
+            ico.save(err => {
+                if (err) throw err;
+            });
+        })
+        .on('receipt', function (receipt) {
+            // console.log("receipt: ", receipt);
+        })
+
+        .on('error', function (error) {
+            console.log("error: ", error);
+            return res.status(500).json({
+                message: error
+            });
+        }) // If there's an out of gas error the second parameter is the receipt.
+
+        .then(function(newContractInstance) {
+            ico.crowdsaleAddress = newContractInstance.options.address;
+            ico.save(err => {
+                if (err) throw err;
+            });
+
+            // token distribution
+            // Artist Trading Account 48,000,000
+            // HCR Trading Account 14,000,000
+            // Artist Account 50,000,000
+            // Joshua Hunt Account 50,000,000 + 38,000,000(1st Sale Release)
+            transferToken(ico.tokenAddress, req.body.artist_trading_account, '48000000');
+            transferToken(ico.tokenAddress, req.body.hcr_trading_account, '14000000');
+            transferToken(ico.tokenAddress, req.body.artist_account, '50000000');
+            transferToken(ico.tokenAddress, req.body.admin_account, '88000000');
+        });
+
+    });
 }
 
-exports.getContractByArtist = (req, res) => {
-    if (!Web3.utils.isAddress(req.params.artist_address)) {
+exports.getICOCreationStatus = (req, res) => {
+    if (!req.params.tx_hash) {
         return res.status(422).json({
-            message: "invalid artist_address"
+            message: "invalid tx hash"
+        });
+    }
+
+    ICOCreation.findOneByTx(req.params.tx_hash, function(error, ico) {
+        if (error) {
+            return res.status(500).json({
+                message: String(error)
+            });
+        }
+        if (ico && ico.tokenAddress && ico.crowdsaleAddress) {
+            return res.json({
+                success: true,
+                token_tx: ico.tokenTx,
+                crowdsale_tx: ico.crowdsaleTx,
+                token_address: ico.tokenAddress,
+                crowdsale_address: ico.crowdsaleAddress
+            });
+        } else {
+            return res.status(404).json({
+                message: 'Not Found'
+            });
+        }
+    });
+}
+
+exports.getContractInfo = (req, res) => {
+    if (!Web3.utils.isAddress(req.body.token_address)) {
+        return res.status(422).json({
+            message: "invalid token contract address"
+        });
+    }
+
+    if (!Web3.utils.isAddress(req.body.crowdsale_address)) {
+        return res.status(422).json({
+            message: "invalid crowdsale contract address"
         });
     }
 
     // for hcr ico
-    if (req.params.artist_address == '0xe8e067Ec9D408C932524982aa78c76C2E7152D1C') {
+    if (req.body.token_address == process.env.HCR_TOKEN_ADDRESS) {
         const {
             HCR_TOKEN_ADDRESS: tokenAddress,
             HCR_CROWDSALE_ADDRESS: crowdsaleAddress
@@ -105,7 +201,6 @@ exports.getContractByArtist = (req, res) => {
             crowdsaleContract.methods.tokenSold().call()
         ])
         .then(([totalSupply, weiRaised, tokenSold]) => {
-            console.log('token address, crontract address', tokenAddress, crowdsaleAddress);
             return res.json({
                 success: true,
                 artist: req.params.artist_address,
@@ -126,63 +221,56 @@ exports.getContractByArtist = (req, res) => {
             });
         });
     } else {
-
         // normal ICO
-        let contracts;
+        let crowdsaleContract = Contracts.crowdsaleContract(req.body.crowdsale_address);
+        let tokenContract = Contracts.tokenContract(req.body.token_address);
         Promise.all([
-                managerContract.methods.getToken(req.params.artist_address).call(),
-                managerContract.methods.getCrowdsale(req.params.artist_address).call()
-            ])
-            .then(([tokenAddress, crowdsaleAddress]) => {
-                if (tokenAddress != '0x0000000000000000000000000000000000000000' &&
-                    crowdsaleAddress != '0x0000000000000000000000000000000000000000' &&
-                    Web3.utils.isAddress(tokenAddress) &&
-                    Web3.utils.isAddress(crowdsaleAddress)) {
-                    contracts = {
-                        token: tokenAddress,
-                        crowdsale: crowdsaleAddress
-                    };
-                    let crowdsaleContract = Contracts.crowdsaleContract(crowdsaleAddress);
-                    let tokenContract = Contracts.tokenContract(tokenAddress);
-                    return Promise.all([
-                        tokenContract.methods.totalSupply().call(),
-                        crowdsaleContract.methods.weiRaised().call(),
-                        crowdsaleContract.methods.tokenSold().call(),
-                        crowdsaleContract.methods.weiRaisedInCurrentStage().call(),
-                        crowdsaleContract.methods.tokenSoldInCurrentStage().call(),
-                    ]);
-                } else {
-                    reject(new Error('Not found'));
-                }
-            })
-            .then(([totalSupply, weiRaised, tokenSold, weiRaisedInCurrentStage, tokenSoldInCurrentStage]) => {
-                console.log('token address, crontract address', contracts.token, contracts.crowdsale);
-                return res.json({
-                    success: true,
-                    artist: req.params.artist_address,
-                    token: contracts.token,
-                    crowdsale: contracts.crowdsale,
-                    eth_raised: Web3.utils.fromWei(weiRaised, 'ether'),
-                    token_sold: Web3.utils.fromWei(tokenSold, 'ether'),
-                    eth_raised_current_stage: Web3.utils.fromWei(weiRaisedInCurrentStage, 'ether'),
-                    token_sold_current_stage: Web3.utils.fromWei(tokenSoldInCurrentStage, 'ether'),
-                    total_supply: Web3.utils.fromWei(totalSupply, 'ether')
-                });
-            })
-            .catch(ex => {
-                console.log(ex);
-                res.status(404).json({
-                    message: `The artist ${req.params.artist_address} doesn't have token`,
-                    artist: req.params.artist_address
-                });
+            tokenContract.methods.totalSupply().call(),
+            crowdsaleContract.methods.weiRaised().call(),
+            crowdsaleContract.methods.tokenSold().call(),
+            crowdsaleContract.methods.weiRaisedInCurrentStage().call(),
+            crowdsaleContract.methods.tokenSoldInCurrentStage().call()
+        ])
+        .then(([totalSupply, weiRaised, tokenSold, weiRaisedInCurrentStage, tokenSoldInCurrentStage]) => {
+            return res.json({
+                success: true,
+                artist: req.params.artist_address,
+                token: req.body.token_address,
+                crowdsale: req.body.crowdsale_address,
+                eth_raised: Web3.utils.fromWei(weiRaised, 'ether'),
+                token_sold: Web3.utils.fromWei(tokenSold, 'ether'),
+                eth_raised_current_stage: Web3.utils.fromWei(weiRaisedInCurrentStage, 'ether'),
+                token_sold_current_stage: Web3.utils.fromWei(tokenSoldInCurrentStage, 'ether'),
+                total_supply: Web3.utils.fromWei(totalSupply, 'ether')
             });
+        })
+        .catch(ex => {
+            console.log(ex);
+            res.status(404).json({
+                message: `Not Found Token:${req.params.token_address}, Crowdsale: ${req.params.crowdsale_address}`,
+                token_address: req.params.token_address,
+                crowdsale_address: req.params.crowdsale_address,
+            });
+        });
     }
 }
 
 exports.createStage = (req, res) => {
-    if (!Web3.utils.isAddress(req.body.artist_address)) {
+    if (!Web3.utils.isAddress(req.body.crowdsale_address)) {
         return res.status(422).json({
-            message: "invalid artist_address"
+            message: "invalid crowdsale contract address"
+        });
+    }
+
+    if (!Web3.utils.isAddress(req.body.token_address)) {
+        return res.status(422).json({
+            message: "invalid token contract address"
+        });
+    }
+
+    if (!req.body.private_key) {
+        return res.status(422).json({
+            message: "invalid private key"
         });
     }
 
@@ -211,28 +299,41 @@ exports.createStage = (req, res) => {
     }
 
     try {
-        managerContract.methods.setStage(
-                req.body.artist_address,
+        let crowdsaleContract = Contracts.crowdsaleContract(req.body.crowdsale_address);
+        crowdsaleContract.methods.stage(
                 req.body.start_date,
                 req.body.end_date,
-                req.body.supply,
                 req.body.price)
             .send()
             .on('transactionHash', hash => {
-                console.log('Transaction Hash: ', hash);
+                console.log('Set Stage Tx: ', hash);
+
+                let fromAccount = web3.eth.accounts.wallet.add(req.body.private_key);
+
+                let tokenContract = Contracts.tokenContract(req.body.token_address);
+                tokenContract.methods.transfer(req.body.crowdsale_address, web3.utils.toWei(req.body.supply, "ether"))
+                .send({
+                    from: fromAccount.address,
+                    value: 0,
+                    gas: process.env.GAS_LOW,
+                    gasPrice: process.env.GAS_PRICE
+                })
+                .on('transactionHash', hash => {
+                    web3.eth.accounts.wallet.remove(fromAccount.index);
+                })
+                .then(receipt => {
+                    console.log(`Transfer ${req.body.supply} from ${fromAccount.address} to ${req.body.crowdsale_address} - ${receipt.transactionHash}`);
+                });
+
                 res.json({
                     success: true,
                     status: 'pending',
                     tx_hash: hash,
-                    artist_address: req.body.artist_address,
                     start_date: req.body.start_date,
                     end_date: req.body.end_date,
                     supply: req.body.supply,
                     price: req.body.price
                 });
-            })
-            .on('confirmation', function (confirmationNumber, receipt) {
-                console.log("confirmation: ", confirmationNumber, receipt);
             })
             .on('receipt', function (receipt) {
                 // console.log("receipt: ", receipt);
@@ -241,7 +342,6 @@ exports.createStage = (req, res) => {
                 console.log("error: ", error);
             }); // If there's an out of gas error the second parameter is the receipt.
 
-        console.log("Transaction was sent");
     } catch (ex) {
         console.log(ex);
         res.status(500).json({
@@ -251,9 +351,9 @@ exports.createStage = (req, res) => {
 }
 
 exports.updateStage = (req, res) => {
-    if (!Web3.utils.isAddress(req.body.artist_address)) {
+    if (!Web3.utils.isAddress(req.body.crowdsale_address)) {
         return res.status(422).json({
-            message: "invalid artist_address"
+            message: "invalid crowdsale contract address"
         });
     }
 
@@ -269,45 +369,39 @@ exports.updateStage = (req, res) => {
         });
     }
     let replied = false;
-    managerContract.methods.updateCrowdsaleTime(
-            req.body.artist_address,
-            req.body.start_date,
-            req.body.end_date)
-        .send()
-        .on('transactionHash', hash => {
-            console.log('Transaction Hash: ', hash);
-            res.json({
-                success: true,
-                status: 'pending',
-                tx_hash: hash,
-                artist_address: req.body.artist_address,
-                start_date: req.body.start_date,
-                end_date: req.body.end_date
+    let crowdsaleContract = Contracts.crowdsaleContract(req.body.crowdsale_address);
+    crowdsaleContract.methods.updateTime(req.body.start_date, req.body.end_date)
+    .send()
+    .on('transactionHash', hash => {
+        console.log('Update Stage Tx: ', hash);
+        res.json({
+            success: true,
+            status: 'pending',
+            tx_hash: hash,
+            crowdsale_address: req.body.crowdsale_address,
+            start_date: req.body.start_date,
+            end_date: req.body.end_date
+        });
+        replied = true;
+    })
+    .on('receipt', function (receipt) {
+        // console.log("receipt: ", receipt);
+    })
+    .on('error', function (error) {
+        console.log("error: ", error);
+        if (!replied) {
+            res.status(500).json({
+                message: String(error)
             });
-            replied = true;
-        })
-        .on('confirmation', function (confirmationNumber, receipt) {
-            console.log("confirmation: ", confirmationNumber, receipt);
-        })
-        .on('receipt', function (receipt) {
-            // console.log("receipt: ", receipt);
-        })
-        .on('error', function (error) {
-            console.log("error: ", error);
-            if (!replied) {
-                res.status(500).json({
-                    message: String(error)
-                });
-            }
-        }); // If there's an out of gas error the second parameter is the receipt.
+        }
+    }); // If there's an out of gas error the second parameter is the receipt.
 
-    console.log("Transaction was sent");
 }
 
 exports.allocateTokens = (req, res) => {
-    if (!Web3.utils.isAddress(req.body.artist_address)) {
+    if (!Web3.utils.isAddress(req.body.crowdsale_address)) {
         return res.status(422).json({
-            message: "invalid artist_address"
+            message: "invalid crowdsale contract address"
         });
     }
 
@@ -323,78 +417,32 @@ exports.allocateTokens = (req, res) => {
         });
     }
 
-    // for hcr ico
-    if (req.body.artist_address == '0xe8e067Ec9D408C932524982aa78c76C2E7152D1C') {
-        const {
-            HCR_CROWDSALE_ADDRESS: crowdsaleAddress
-        } = process.env;
-
-        let contract = Contracts.hcrCrowdsaleContract(crowdsaleAddress);
-        try {
-            contract.methods.allocate(req.body.beneficiary_address, Web3.utils.toWei(req.body.amount, 'ether'))
-            .send()
-            .on('transactionHash', hash => {
-                console.log('Transaction Hash: ', hash);
-                res.json({
-                    success: true,
-                    status: 'pending',
-                    tx_hash: hash,
-                    artist_address: req.body.artist_address,
-                    beneficiary_address: req.body.beneficiary_address,
-                    amount: req.body.amount
-                });
-            })
-            .on('confirmation', function (confirmationNumber, receipt) {
-                console.log("confirmation: ", confirmationNumber, receipt);
-            })
-            .on('receipt', function (receipt) {
-                // console.log("receipt: ", receipt);
-            })
-            .on('error', function (error) {
-                console.log("error: ", error);
-            }); // If there's an out of gas error the second parameter is the receipt.
-        } catch (ex) {
-            console.log(ex);
-            res.status(500).json({
-                message: ex.message
+    let contract = Contracts.crowdsaleContract(req.body.crowdsale_address);
+    try {
+        contract.methods.allocate(req.body.beneficiary_address, Web3.utils.toWei(req.body.amount, 'ether'))
+        .send()
+        .on('transactionHash', hash => {
+            console.log('Token Allocation Tx: ', hash);
+            res.json({
+                success: true,
+                status: 'pending',
+                tx_hash: hash,
+                artist_address: req.body.artist_address,
+                beneficiary_address: req.body.beneficiary_address,
+                amount: req.body.amount
             });
-        }
-    // normal artist ICO
-    } else {
-        try {
-            managerContract.methods.allocate(
-                    req.body.artist_address,
-                    req.body.beneficiary_address,
-                    parseInt(req.body.amount))
-                .send()
-                .on('transactionHash', hash => {
-                    console.log('Transaction Hash: ', hash);
-                    res.json({
-                        success: true,
-                        status: 'pending',
-                        tx_hash: hash,
-                        artist_address: req.body.artist_address,
-                        beneficiary_address: req.body.beneficiary_address,
-                        amount: req.body.amount
-                    });
-                })
-                .on('confirmation', function (confirmationNumber, receipt) {
-                    console.log("confirmation: ", confirmationNumber, receipt);
-                })
-                .on('receipt', function (receipt) {
-                    // console.log("receipt: ", receipt);
-                })
-                .on('error', function (error) {
-                    console.log("error: ", error);
-                }); // If there's an out of gas error the second parameter is the receipt.
-
-            console.log("Transaction was sent");
-        } catch (ex) {
-            console.log(ex);
-            res.status(500).json({
-                message: ex.message
-            });
-        }
+        })
+        .on('receipt', function (receipt) {
+            // console.log("receipt: ", receipt);
+        })
+        .on('error', function (error) {
+            console.log("error: ", error);
+        }); // If there's an out of gas error the second parameter is the receipt.
+    } catch (ex) {
+        console.log(ex);
+        res.status(500).json({
+            message: ex.message
+        });
     }
 }
 
