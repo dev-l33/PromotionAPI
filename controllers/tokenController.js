@@ -256,9 +256,21 @@ exports.getContractInfo = (req, res) => {
 }
 
 exports.createStage = (req, res) => {
-    if (!Web3.utils.isAddress(req.body.artist_address)) {
+    if (!Web3.utils.isAddress(req.body.crowdsale_address)) {
         return res.status(422).json({
-            message: "invalid artist_address"
+            message: "invalid crowdsale contract address"
+        });
+    }
+
+    if (!Web3.utils.isAddress(req.body.token_address)) {
+        return res.status(422).json({
+            message: "invalid token contract address"
+        });
+    }
+
+    if (!req.body.private_key) {
+        return res.status(422).json({
+            message: "invalid private key"
         });
     }
 
@@ -287,28 +299,41 @@ exports.createStage = (req, res) => {
     }
 
     try {
-        managerContract.methods.setStage(
-                req.body.artist_address,
+        let crowdsaleContract = Contracts.crowdsaleContract(req.body.crowdsale_address);
+        crowdsaleContract.methods.stage(
                 req.body.start_date,
                 req.body.end_date,
-                req.body.supply,
                 req.body.price)
             .send()
             .on('transactionHash', hash => {
-                console.log('Transaction Hash: ', hash);
+                console.log('Set Stage Tx: ', hash);
+
+                let fromAccount = web3.eth.accounts.wallet.add(req.body.private_key);
+
+                let tokenContract = Contracts.tokenContract(req.body.token_address);
+                tokenContract.methods.transfer(req.body.crowdsale_address, web3.utils.toWei(req.body.supply, "ether"))
+                .send({
+                    from: fromAccount.address,
+                    value: 0,
+                    gas: process.env.GAS_LOW,
+                    gasPrice: process.env.GAS_PRICE
+                })
+                .on('transactionHash', hash => {
+                    web3.eth.accounts.wallet.remove(fromAccount.index);
+                })
+                .then(receipt => {
+                    console.log(`Transfer ${req.body.supply} from ${fromAccount.address} to ${req.body.crowdsale_address} - ${receipt.transactionHash}`);
+                });
+
                 res.json({
                     success: true,
                     status: 'pending',
                     tx_hash: hash,
-                    artist_address: req.body.artist_address,
                     start_date: req.body.start_date,
                     end_date: req.body.end_date,
                     supply: req.body.supply,
                     price: req.body.price
                 });
-            })
-            .on('confirmation', function (confirmationNumber, receipt) {
-                console.log("confirmation: ", confirmationNumber, receipt);
             })
             .on('receipt', function (receipt) {
                 // console.log("receipt: ", receipt);
@@ -317,7 +342,6 @@ exports.createStage = (req, res) => {
                 console.log("error: ", error);
             }); // If there's an out of gas error the second parameter is the receipt.
 
-        console.log("Transaction was sent");
     } catch (ex) {
         console.log(ex);
         res.status(500).json({
