@@ -231,6 +231,20 @@
 		"type": "function"
 	},
 	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_manager",
+				"type": "address"
+			}
+		],
+		"name": "setManager",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"constant": true,
 		"inputs": [],
 		"name": "tokenSoldInCurrentStage",
@@ -308,6 +322,10 @@
 			},
 			{
 				"name": "_token",
+				"type": "address"
+			},
+			{
+				"name": "_manager",
 				"type": "address"
 			}
 		],

@@ -103,7 +103,7 @@ exports.createICO = (req, res) => {
 
         crowdsaleContract.deploy({
             data: Bytecode.crowdsale,
-            arguments: [process.env.WALLET_ADDRESS, newContractInstance.options.address]
+            arguments: [process.env.WALLET_ADDRESS, newContractInstance.options.address, process.env.MANAGER_CONTRACT_ADDRESS]
         })
         .send(Contracts.options)
         .on('transactionHash', hash => {
@@ -399,9 +399,9 @@ exports.updateStage = (req, res) => {
 }
 
 exports.allocateTokens = (req, res) => {
-    if (!Web3.utils.isAddress(req.body.artist_address)) {
+    if (!Web3.utils.isAddress(req.body.crowdsale_address)) {
         return res.status(422).json({
-            message: "invalid artist_address"
+            message: "invalid crowdsale contract address"
         });
     }
 
@@ -417,78 +417,32 @@ exports.allocateTokens = (req, res) => {
         });
     }
 
-    // for hcr ico
-    if (req.body.artist_address == '0xe8e067Ec9D408C932524982aa78c76C2E7152D1C') {
-        const {
-            HCR_CROWDSALE_ADDRESS: crowdsaleAddress
-        } = process.env;
-
-        let contract = Contracts.hcrCrowdsaleContract(crowdsaleAddress);
-        try {
-            contract.methods.allocate(req.body.beneficiary_address, Web3.utils.toWei(req.body.amount, 'ether'))
-            .send()
-            .on('transactionHash', hash => {
-                console.log('Transaction Hash: ', hash);
-                res.json({
-                    success: true,
-                    status: 'pending',
-                    tx_hash: hash,
-                    artist_address: req.body.artist_address,
-                    beneficiary_address: req.body.beneficiary_address,
-                    amount: req.body.amount
-                });
-            })
-            .on('confirmation', function (confirmationNumber, receipt) {
-                console.log("confirmation: ", confirmationNumber, receipt);
-            })
-            .on('receipt', function (receipt) {
-                // console.log("receipt: ", receipt);
-            })
-            .on('error', function (error) {
-                console.log("error: ", error);
-            }); // If there's an out of gas error the second parameter is the receipt.
-        } catch (ex) {
-            console.log(ex);
-            res.status(500).json({
-                message: ex.message
+    let contract = Contracts.crowdsaleContract(req.body.crowdsale_address);
+    try {
+        contract.methods.allocate(req.body.beneficiary_address, Web3.utils.toWei(req.body.amount, 'ether'))
+        .send()
+        .on('transactionHash', hash => {
+            console.log('Token Allocation Tx: ', hash);
+            res.json({
+                success: true,
+                status: 'pending',
+                tx_hash: hash,
+                artist_address: req.body.artist_address,
+                beneficiary_address: req.body.beneficiary_address,
+                amount: req.body.amount
             });
-        }
-    // normal artist ICO
-    } else {
-        try {
-            managerContract.methods.allocate(
-                    req.body.artist_address,
-                    req.body.beneficiary_address,
-                    parseInt(req.body.amount))
-                .send()
-                .on('transactionHash', hash => {
-                    console.log('Transaction Hash: ', hash);
-                    res.json({
-                        success: true,
-                        status: 'pending',
-                        tx_hash: hash,
-                        artist_address: req.body.artist_address,
-                        beneficiary_address: req.body.beneficiary_address,
-                        amount: req.body.amount
-                    });
-                })
-                .on('confirmation', function (confirmationNumber, receipt) {
-                    console.log("confirmation: ", confirmationNumber, receipt);
-                })
-                .on('receipt', function (receipt) {
-                    // console.log("receipt: ", receipt);
-                })
-                .on('error', function (error) {
-                    console.log("error: ", error);
-                }); // If there's an out of gas error the second parameter is the receipt.
-
-            console.log("Transaction was sent");
-        } catch (ex) {
-            console.log(ex);
-            res.status(500).json({
-                message: ex.message
-            });
-        }
+        })
+        .on('receipt', function (receipt) {
+            // console.log("receipt: ", receipt);
+        })
+        .on('error', function (error) {
+            console.log("error: ", error);
+        }); // If there's an out of gas error the second parameter is the receipt.
+    } catch (ex) {
+        console.log(ex);
+        res.status(500).json({
+            message: ex.message
+        });
     }
 }
 
