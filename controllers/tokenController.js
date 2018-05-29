@@ -22,8 +22,8 @@ exports.createICO = (req, res) => {
     }
 
     let ico = new ICOCreation();
-    let tokenContract = Contracts.tokenContract;
-    let crowdsaleContract = Contracts.crowdsaleContract;
+    let tokenContract = Contracts.newTokenContract;
+    let crowdsaleContract = Contracts.newCrowdsaleContract;
     tokenContract.deploy({
         data: Bytecode.token,
         arguments: [req.body.token_name, req.body.token_symbol]
@@ -123,15 +123,21 @@ exports.getICOCreationStatus = (req, res) => {
     });
 }
 
-exports.getContractByArtist = (req, res) => {
-    if (!Web3.utils.isAddress(req.params.artist_address)) {
+exports.getContractInfo = (req, res) => {
+    if (!Web3.utils.isAddress(req.body.token_address)) {
         return res.status(422).json({
-            message: "invalid artist_address"
+            message: "invalid token contract address"
         });
     }
 
+    if (!Web3.utils.isAddress(req.body.crowdsale_address)) {
+        return res.status(422).json({
+            message: "invalid crowdsale contract address"
+        });
+    }
+try{
     // for hcr ico
-    if (req.params.artist_address == '0xe8e067Ec9D408C932524982aa78c76C2E7152D1C') {
+    if (req.body.token_address == process.env.HCR_TOKEN_ADDRESS) {
         const {
             HCR_TOKEN_ADDRESS: tokenAddress,
             HCR_CROWDSALE_ADDRESS: crowdsaleAddress
@@ -145,7 +151,6 @@ exports.getContractByArtist = (req, res) => {
             crowdsaleContract.methods.tokenSold().call()
         ])
         .then(([totalSupply, weiRaised, tokenSold]) => {
-            console.log('token address, crontract address', tokenAddress, crowdsaleAddress);
             return res.json({
                 success: true,
                 artist: req.params.artist_address,
@@ -166,57 +171,41 @@ exports.getContractByArtist = (req, res) => {
             });
         });
     } else {
-
         // normal ICO
-        let contracts;
+        let crowdsaleContract = Contracts.crowdsaleContract(req.body.crowdsale_address);
+        let tokenContract = Contracts.tokenContract(req.body.token_address);
         Promise.all([
-                managerContract.methods.getToken(req.params.artist_address).call(),
-                managerContract.methods.getCrowdsale(req.params.artist_address).call()
-            ])
-            .then(([tokenAddress, crowdsaleAddress]) => {
-                if (tokenAddress != '0x0000000000000000000000000000000000000000' &&
-                    crowdsaleAddress != '0x0000000000000000000000000000000000000000' &&
-                    Web3.utils.isAddress(tokenAddress) &&
-                    Web3.utils.isAddress(crowdsaleAddress)) {
-                    contracts = {
-                        token: tokenAddress,
-                        crowdsale: crowdsaleAddress
-                    };
-                    let crowdsaleContract = Contracts.crowdsaleContract(crowdsaleAddress);
-                    let tokenContract = Contracts.tokenContract(tokenAddress);
-                    return Promise.all([
-                        tokenContract.methods.totalSupply().call(),
-                        crowdsaleContract.methods.weiRaised().call(),
-                        crowdsaleContract.methods.tokenSold().call(),
-                        crowdsaleContract.methods.weiRaisedInCurrentStage().call(),
-                        crowdsaleContract.methods.tokenSoldInCurrentStage().call(),
-                    ]);
-                } else {
-                    reject(new Error('Not found'));
-                }
-            })
-            .then(([totalSupply, weiRaised, tokenSold, weiRaisedInCurrentStage, tokenSoldInCurrentStage]) => {
-                console.log('token address, crontract address', contracts.token, contracts.crowdsale);
-                return res.json({
-                    success: true,
-                    artist: req.params.artist_address,
-                    token: contracts.token,
-                    crowdsale: contracts.crowdsale,
-                    eth_raised: Web3.utils.fromWei(weiRaised, 'ether'),
-                    token_sold: Web3.utils.fromWei(tokenSold, 'ether'),
-                    eth_raised_current_stage: Web3.utils.fromWei(weiRaisedInCurrentStage, 'ether'),
-                    token_sold_current_stage: Web3.utils.fromWei(tokenSoldInCurrentStage, 'ether'),
-                    total_supply: Web3.utils.fromWei(totalSupply, 'ether')
-                });
-            })
-            .catch(ex => {
-                console.log(ex);
-                res.status(404).json({
-                    message: `The artist ${req.params.artist_address} doesn't have token`,
-                    artist: req.params.artist_address
-                });
+            tokenContract.methods.totalSupply().call(),
+            crowdsaleContract.methods.weiRaised().call(),
+            crowdsaleContract.methods.tokenSold().call(),
+            crowdsaleContract.methods.weiRaisedInCurrentStage().call(),
+            crowdsaleContract.methods.tokenSoldInCurrentStage().call()
+        ])
+        .then(([totalSupply, weiRaised, tokenSold, weiRaisedInCurrentStage, tokenSoldInCurrentStage]) => {
+            return res.json({
+                success: true,
+                artist: req.params.artist_address,
+                token: req.body.token_address,
+                crowdsale: req.body.crowdsale_address,
+                eth_raised: Web3.utils.fromWei(weiRaised, 'ether'),
+                token_sold: Web3.utils.fromWei(tokenSold, 'ether'),
+                eth_raised_current_stage: Web3.utils.fromWei(weiRaisedInCurrentStage, 'ether'),
+                token_sold_current_stage: Web3.utils.fromWei(tokenSoldInCurrentStage, 'ether'),
+                total_supply: Web3.utils.fromWei(totalSupply, 'ether')
             });
+        })
+        .catch(ex => {
+            console.log(ex);
+            res.status(404).json({
+                message: `Not Found Token:${req.params.token_address}, Crowdsale: ${req.params.crowdsale_address}`,
+                token_address: req.params.token_address,
+                crowdsale_address: req.params.crowdsale_address,
+            });
+        });
     }
+} catch(ex) {
+    console.log(ex);
+}
 }
 
 exports.createStage = (req, res) => {
