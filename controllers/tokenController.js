@@ -94,6 +94,34 @@ exports.createICO = (req, res) => {
     });
 }
 
+exports.getICOCreationStatus = (req, res) => {
+    if (!req.params.tx_hash) {
+        return res.status(422).json({
+            message: "invalid tx hash"
+        });
+    }
+
+    ICOCreation.findOneByTx(req.params.tx_hash, function(error, ico) {
+        if (error) {
+            return res.status(500).json({
+                message: String(error)
+            });
+        }
+        if (ico && ico.tokenAddress && ico.crowdsaleAddress) {
+            return res.json({
+                token_tx: ico.tokenTx,
+                crowdsale_tx: ico.crowdsaleTx,
+                token_address: ico.tokenAddress,
+                crowdsaleAddress: ico.crowdsaleAddress
+            });
+        } else {
+            return res.status(404).json({
+                message: 'Not Found'
+            });
+        }
+    });
+}
+
 exports.getContractByArtist = (req, res) => {
     if (!Web3.utils.isAddress(req.params.artist_address)) {
         return res.status(422).json({

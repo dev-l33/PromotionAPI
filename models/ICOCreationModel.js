@@ -12,7 +12,7 @@ const ICOCreation = new Schema({
 });
 
 // find 
-ICOCreation.statics.findByTx = function(tx, cb) {
+ICOCreation.statics.findOneByTx = function(tx, cb) {
     return this.findOne({ tokenTx: tx }, cb);
 };
 

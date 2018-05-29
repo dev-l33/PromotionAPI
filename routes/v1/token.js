@@ -3,6 +3,7 @@ var router = express.Router();
 var tokenController = require('../../controllers/tokenController');
 
 router.post('/create', tokenController.createICO);
+router.get('/create/status/:tx_hash', tokenController.getICOCreationStatus);
 router.post('/stage/create', tokenController.createStage);
 router.post('/stage/update', tokenController.updateStage);
 router.post('/allocate', tokenController.allocateTokens);
