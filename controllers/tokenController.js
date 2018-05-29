@@ -1,15 +1,13 @@
 var Web3 = require('web3');
+const ICOCreation = require('../models/ICOCreationModel');
+const mongoose = require('mongoose');
 
 var Contracts = require('../token/contract');
+var Bytecode = require('../token/bytecode');
 
 var managerContract = Contracts.managerContract;
 
 exports.createICO = (req, res) => {
-    if (!Web3.utils.isAddress(req.body.artist_address)) {
-        return res.status(422).json({
-            message: "invalid artist_address"
-        });
-    }
 
     if (!req.body.token_name) {
         return res.status(422).json({
@@ -23,64 +21,77 @@ exports.createICO = (req, res) => {
         });
     }
 
-    try {
-        const HCR_ALLOCATION = '50000000';
-        const ARTIST_ALLOCATION = '50000000';
-        managerContract.methods.createToken(
-                req.body.artist_address,
-                req.body.token_name,
-                req.body.token_symbol,
-                Web3.utils.toWei(HCR_ALLOCATION, "ether"),
-                Web3.utils.toWei(ARTIST_ALLOCATION, "ether"))
-            .send()
-            .on('transactionHash', hash => {
-                console.log('Transaction Hash: ', hash);
-                res.json({
-                    success: true,
-                    status: 'pending',
-                    tx_hash: hash,
-                    artist_address: req.body.artist_address,
-                    token_name: req.body.token_name,
-                    token_symbol: req.body.token_symbol
-                });
-            })
-            .on('confirmation', function (confirmationNumber, receipt) {
-                console.log("confirmation: ", confirmationNumber, receipt);
-            })
-            .on('receipt', function (receipt) {
-                // console.log("receipt: ", receipt);
-            })
-            .on('error', function (error) {
-                console.log("error: ", error);
-            }); // If there's an out of gas error the second parameter is the receipt.
-
-        // managerContract.once('TokenIssue',
-        //     function (error, event) {
-        //         console.log(error);
-        //         console.log(event);
-        //         // res.json(event);
-        //     }
-        // );
-
-        // managerContract.events.TokenIssue({
-        //     filter: { artist: req.body.artist_address },
-        //     fromBlock: 0
-        // }, function(error, event){ console.log(event); })
-        // .on('data', function(event){
-        //     console.log(event); // same results as the optional callback above
-        // })
-        // .on('changed', function(event){
-        //     // remove event from local database
-        // })
-        // .on('error', console.error);
-
-        console.log("Transaction was sent");
-    } catch (ex) {
-        console.log(ex);
-        res.status(500).json({
-            message: ex.message
+    let ico = new ICOCreation();
+    let tokenContract = Contracts.tokenContract;
+    let crowdsaleContract = Contracts.crowdsaleContract;
+    tokenContract.deploy({
+        data: Bytecode.token,
+        arguments: [req.body.token_name, req.body.token_symbol]
+    })
+    .send(Contracts.options)
+    .on('transactionHash', hash => {
+        console.log('Token Deploy Tx Hash: ', hash);
+        ico.tokenTx = hash;
+        ico.save(err => {
+            if (err) throw err;
         });
-    }
+        
+        res.json({
+            success: true,
+            status: 'pending',
+            tx_hash: hash,
+            token_name: req.body.token_name,
+            token_symbol: req.body.token_symbol
+        });
+    })
+    .on('receipt', function (receipt) {
+        // console.log("receipt: ", receipt);
+    })
+
+    .on('error', function (error) {
+        console.log("error: ", error);
+        return res.status(500).json({
+            message: error
+        });
+    }) // If there's an out of gas error the second parameter is the receipt.
+
+    .then(function(newContractInstance) {
+        ico.tokenAddress = newContractInstance.options.address;
+        ico.save(err => {
+            if (err) throw err;
+        });
+
+        crowdsaleContract.deploy({
+            data: Bytecode.crowdsale,
+            arguments: [process.env.WALLET_ADDRESS, newContractInstance.options.address]
+        })
+        .send(Contracts.options)
+        .on('transactionHash', hash => {
+            console.log('Crowdsale Deploy Tx Hash: ', hash);
+            ico.crowdsaleTx = hash;
+            ico.save(err => {
+                if (err) throw err;
+            });
+        })
+        .on('receipt', function (receipt) {
+            // console.log("receipt: ", receipt);
+        })
+
+        .on('error', function (error) {
+            console.log("error: ", error);
+            return res.status(500).json({
+                message: error
+            });
+        }) // If there's an out of gas error the second parameter is the receipt.
+
+        .then(function(newContractInstance) {
+            ico.crowdsaleAddress = newContractInstance.options.address;
+            ico.save(err => {
+                if (err) throw err;
+            });
+        });
+
+    });
 }
 
 exports.getContractByArtist = (req, res) => {

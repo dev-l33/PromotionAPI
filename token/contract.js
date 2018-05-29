@@ -18,8 +18,12 @@ const options = {
     gas: GAS
 }
 
+exports.options = options;
+
 exports.managerContract = new web3.eth.Contract(managerABI, managerAddress, options);
 
 exports.crowdsaleContract = (address) => new web3.eth.Contract(crowdsaleABI, address, options);
+exports.crowdsaleContract = new web3.eth.Contract(crowdsaleABI);
 exports.tokenContract = (address) => new web3.eth.Contract(tokenABI, address, options);
+exports.tokenContract = new web3.eth.Contract(tokenABI);
 exports.hcrCrowdsaleContract = (address) => new web3.eth.Contract(hcrCrowdsaleABI, address, options);
