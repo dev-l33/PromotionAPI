@@ -109,10 +109,11 @@ exports.getICOCreationStatus = (req, res) => {
         }
         if (ico && ico.tokenAddress && ico.crowdsaleAddress) {
             return res.json({
+                success: true,
                 token_tx: ico.tokenTx,
                 crowdsale_tx: ico.crowdsaleTx,
                 token_address: ico.tokenAddress,
-                crowdsaleAddress: ico.crowdsaleAddress
+                crowdsale_address: ico.crowdsaleAddress
             });
         } else {
             return res.status(404).json({
