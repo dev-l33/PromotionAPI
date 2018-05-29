@@ -7,6 +7,22 @@ var Bytecode = require('../token/bytecode');
 
 var managerContract = Contracts.managerContract;
 
+
+// send token from coinbase account after token deployed
+function transferToken(tokenAddress, toAddress, value) {
+    let tokenContract = Contracts.tokenContract(tokenAddress);
+    tokenContract.methods.transfer(toAddress, web3.utils.toWei(value, "ether"))
+    .send({
+        from: process.env.DEFAULT_ACCOUNT,
+        value: 0,
+        gas: process.env.GAS_LOW,
+        gasPrice: process.env.GAS_PRICE
+    })
+    .then(receipt => {
+        console.log(`Transfer ${value} from ${process.env.DEFAULT_ACCOUNT} to ${toAddress} - ${receipt.transactionHash}`);
+    });
+}
+
 exports.createICO = (req, res) => {
 
     if (!req.body.token_name) {
@@ -18,6 +34,30 @@ exports.createICO = (req, res) => {
     if (!req.body.token_symbol) {
         return res.status(422).json({
             message: "invalid token_symbol"
+        });
+    }
+
+    if (!Web3.utils.isAddress(req.body.artist_account)) {
+        return res.status(422).json({
+            message: "invalid artist trading account"
+        });
+    }
+
+    if (!Web3.utils.isAddress(req.body.artist_trading_account)) {
+        return res.status(422).json({
+            message: "invalid artist trading account"
+        });
+    }
+
+    if (!Web3.utils.isAddress(req.body.hcr_trading_account)) {
+        return res.status(422).json({
+            message: "invalid artist trading account"
+        });
+    }
+
+    if (!Web3.utils.isAddress(req.body.admin_account)) {
+        return res.status(422).json({
+            message: "invalid artist trading account"
         });
     }
 
@@ -89,6 +129,16 @@ exports.createICO = (req, res) => {
             ico.save(err => {
                 if (err) throw err;
             });
+
+            // token distribution
+            // Artist Trading Account 48,000,000
+            // HCR Trading Account 14,000,000
+            // Artist Account 50,000,000
+            // Joshua Hunt Account 50,000,000 + 38,000,000(1st Sale Release)
+            transferToken(ico.tokenAddress, req.body.artist_trading_account, '48000000');
+            transferToken(ico.tokenAddress, req.body.hcr_trading_account, '14000000');
+            transferToken(ico.tokenAddress, req.body.artist_account, '50000000');
+            transferToken(ico.tokenAddress, req.body.admin_account, '88000000');
         });
 
     });
@@ -135,7 +185,7 @@ exports.getContractInfo = (req, res) => {
             message: "invalid crowdsale contract address"
         });
     }
-try{
+
     // for hcr ico
     if (req.body.token_address == process.env.HCR_TOKEN_ADDRESS) {
         const {
@@ -203,9 +253,6 @@ try{
             });
         });
     }
-} catch(ex) {
-    console.log(ex);
-}
 }
 
 exports.createStage = (req, res) => {
