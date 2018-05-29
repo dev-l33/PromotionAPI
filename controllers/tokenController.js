@@ -351,9 +351,9 @@ exports.createStage = (req, res) => {
 }
 
 exports.updateStage = (req, res) => {
-    if (!Web3.utils.isAddress(req.body.artist_address)) {
+    if (!Web3.utils.isAddress(req.body.crowdsale_address)) {
         return res.status(422).json({
-            message: "invalid artist_address"
+            message: "invalid crowdsale contract address"
         });
     }
 
@@ -369,39 +369,33 @@ exports.updateStage = (req, res) => {
         });
     }
     let replied = false;
-    managerContract.methods.updateCrowdsaleTime(
-            req.body.artist_address,
-            req.body.start_date,
-            req.body.end_date)
-        .send()
-        .on('transactionHash', hash => {
-            console.log('Transaction Hash: ', hash);
-            res.json({
-                success: true,
-                status: 'pending',
-                tx_hash: hash,
-                artist_address: req.body.artist_address,
-                start_date: req.body.start_date,
-                end_date: req.body.end_date
+    let crowdsaleContract = Contracts.crowdsaleContract(req.body.crowdsale_address);
+    crowdsaleContract.methods.updateTime(req.body.start_date, req.body.end_date)
+    .send()
+    .on('transactionHash', hash => {
+        console.log('Update Stage Tx: ', hash);
+        res.json({
+            success: true,
+            status: 'pending',
+            tx_hash: hash,
+            crowdsale_address: req.body.crowdsale_address,
+            start_date: req.body.start_date,
+            end_date: req.body.end_date
+        });
+        replied = true;
+    })
+    .on('receipt', function (receipt) {
+        // console.log("receipt: ", receipt);
+    })
+    .on('error', function (error) {
+        console.log("error: ", error);
+        if (!replied) {
+            res.status(500).json({
+                message: String(error)
             });
-            replied = true;
-        })
-        .on('confirmation', function (confirmationNumber, receipt) {
-            console.log("confirmation: ", confirmationNumber, receipt);
-        })
-        .on('receipt', function (receipt) {
-            // console.log("receipt: ", receipt);
-        })
-        .on('error', function (error) {
-            console.log("error: ", error);
-            if (!replied) {
-                res.status(500).json({
-                    message: String(error)
-                });
-            }
-        }); // If there's an out of gas error the second parameter is the receipt.
+        }
+    }); // If there's an out of gas error the second parameter is the receipt.
 
-    console.log("Transaction was sent");
 }
 
 exports.allocateTokens = (req, res) => {
