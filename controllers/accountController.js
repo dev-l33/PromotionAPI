@@ -73,7 +73,7 @@ exports.sendTransaction = (req, res) => {
                 // console.log("receipt: ", receipt);
             })
             .on('confirmation', function (confirmationNumber, receipt) {
-                console.log("confirmation", receipt);
+                // console.log("confirmation", receipt);
             })
             .on('error', error => {
                 console.log(error);
@@ -114,7 +114,7 @@ exports.addToWhitelist = (req, res) => {
             replied = true;
         })
         .on('confirmation', function (confirmationNumber, receipt) {
-            console.log("confirmation: ", confirmationNumber, receipt);
+            // console.log("confirmation: ", confirmationNumber, receipt);
         })
         .on('receipt', function (receipt) {
             // console.log("receipt: ", receipt);
@@ -192,7 +192,7 @@ exports.transferToken = (req, res) => {
             // console.log("receipt: ", receipt);
         })
         .on('confirmation', function (confirmationNumber, receipt) {
-            console.log("confirmation", receipt);
+            // console.log("confirmation", receipt);
         })
         .on('error', error => {
             console.log(error);
