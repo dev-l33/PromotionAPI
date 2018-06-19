@@ -1,14 +1,9 @@
 var express = require('express');
 var router = express.Router();
-const jwt = require('jsonwebtoken');
 
 const versions = {
     'v1': require('./v1')
 };
-
-const {
-    JWT_PASSPHRASE: jwtPassphrase
-} = process.env;
 
 /* GET home page. */
 router.get('/', (req, res) => res.send("Hunter Microservice REST API is working"));
