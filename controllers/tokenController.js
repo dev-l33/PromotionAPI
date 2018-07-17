@@ -201,6 +201,12 @@ exports.getContractInfo = (req, res) => {
                 crowdsaleContract.methods.tokenSold().call()
             ])
             .then(([totalSupply, weiRaised, tokenSold]) => {
+                let tokenSoldCurrentStage = Web3.utils.fromWei(tokenSold, 'ether');
+                if (tokenSoldCurrentStage < 15000000) {
+                    tokenSoldCurrentStage -= 6000000;
+                } else if ( tokenSoldCurrentStage < 255000000) {
+                    tokenSoldCurrentStage -= 15000000
+                }
                 return res.json({
                     success: true,
                     artist: req.params.artist_address,
@@ -209,7 +215,7 @@ exports.getContractInfo = (req, res) => {
                     eth_raised: Web3.utils.fromWei(weiRaised, 'ether'),
                     token_sold: Web3.utils.fromWei(tokenSold, 'ether'),
                     eth_raised_current_stage: Web3.utils.fromWei(weiRaised, 'ether'),
-                    token_sold_current_stage: Web3.utils.fromWei(tokenSold, 'ether'),
+                    token_sold_current_stage: tokenSoldCurrentStage,
                     total_supply: Web3.utils.fromWei(totalSupply, 'ether')
                 });
             })
