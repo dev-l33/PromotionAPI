@@ -11,7 +11,7 @@ exports.transactionReceipt = (req, res) => {
     .then(receipt => {
         let result = {
             success: true,
-            status: web3.utils.hexToNumber(receipt.status),
+            status: receipt.status,
             from: receipt.from,
             to: receipt.to,
             tx_hash: receipt.transactionHash
@@ -23,7 +23,7 @@ exports.transactionReceipt = (req, res) => {
         res.json(result);
     })
     .catch(ex => {
-        // console.log(ex);
+        console.log(ex);
         res.status(404).json({
             message: 'Invalid Transaction Hash'
         });

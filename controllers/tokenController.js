@@ -72,9 +72,9 @@ exports.createICO = (req, res) => {
         .on('transactionHash', hash => {
             console.log('Token Deploy Tx Hash: ', hash);
             ico.tokenTx = hash;
-            ico.save(err => {
-                if (err) throw err;
-            });
+            // ico.save(err => {
+            //     if (err) throw err;
+            // });
 
             res.json({
                 success: true,
@@ -97,9 +97,9 @@ exports.createICO = (req, res) => {
 
         .then(function (newContractInstance) {
             ico.tokenAddress = newContractInstance.options.address;
-            ico.save(err => {
-                if (err) throw err;
-            });
+            // ico.save(err => {
+            //     if (err) throw err;
+            // });
 
             crowdsaleContract.deploy({
                     data: Bytecode.crowdsale,
@@ -109,9 +109,9 @@ exports.createICO = (req, res) => {
                 .on('transactionHash', hash => {
                     console.log('Crowdsale Deploy Tx Hash: ', hash);
                     ico.crowdsaleTx = hash;
-                    ico.save(err => {
-                        if (err) throw err;
-                    });
+                    // ico.save(err => {
+                    //     if (err) throw err;
+                    // });
                 })
                 .on('receipt', function (receipt) {
                     // console.log("receipt: ", receipt);

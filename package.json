@@ -12,9 +12,9 @@
     "dotenv": "^4.0.0",
     "express": "~4.15.5",
     "express-validator": "^5.0.1",
-    "mongoose": "^5.0.6",
+    "mongoose": "^5.3.14",
     "morgan": "~1.9.0",
     "randomstring": "^1.1.5",
-    "web3": "1.0.0-beta.30"
+    "web3": "1.0.0-beta.36"
   }
 }
